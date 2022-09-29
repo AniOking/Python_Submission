@@ -1,0 +1,87 @@
+import pandas as pd
+import xml.etree.ElementTree as tree
+import logging
+
+#Configuring logging
+logging.basicConfig(level=logging.DEBUG, 
+                   filename="file",
+                   filemode="w",
+                   format="%(asctime)s %(message)s"
+                   )
+logger=logging.getLogger()      #method returns logger
+
+def xml_csv(source,dest):
+    
+        """
+            Parameters:
+                source: string, Source File Path
+                dest:   string, Destination File Path
+            Returns:
+                None
+            Desc:
+                This function converts xml to csv
+        """
+        """
+            Structure of Target Nodes: 
+            Pyld-->|-->Issr
+                   |-->FinInstrmGnlAttrbts-->|
+                                             |-->Id
+                                             |-->FullNm
+                                             |-->ClssfctnTp
+                                             |-->CmmdtyDerivInd
+                                             |-->NtnlCcy
+        """
+        if(type(source) is not str or type(dest) is not str):
+            raise TypeError("Input should be file-path as string")
+        try:
+            #parsing of xml file
+            logger.info("xml Parsing Starts...")
+            data= tree.parse(source)
+            logger.info("xml Parsing completes.")
+            #address structure
+            root_addrs="{urn:iso:std:iso:20022:tech:xsd:head.003.001.01}Pyld"
+            node1_addrs="{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}Issr"
+            node2_addrs="{urn:iso:std:iso:20022:tech:xsd:auth.036.001.02}FinInstrmGnlAttrbts"
+    
+            tg1_addrs=root_addrs+"//"+node1_addrs    #final target node1 addrs
+            tg2_addrs=root_addrs+"//"+node2_addrs    #final target node2 addrs
+    
+            node1=data.findall(tg1_addrs) #Issr Node
+            node2=data.findall(tg2_addrs) #FinInstrmGnlAttrbts Node
+    
+            #dict to store various fields data
+            data={"FinInstrmGnlAttrbts.Id":[], 
+                 "FinInstrmGnlAttrbts.FullNm":[],
+                 "FinInstrmGnlAttrbts.ClssfctnTp":[],
+                 "FinInstrmGnlAttrbts.CmmdtyDerivInd":[],
+                 "FinInstrmGnlAttrbts.NtnlCcy":[],
+                 "Issr":[]}     
+    
+            logger.info("Data Acquiring Starts...")
+   
+            #for loop to read all data
+            for j,i in zip(node1,node2):
+                data["FinInstrmGnlAttrbts.Id"].append(i[0].text)
+                data["FinInstrmGnlAttrbts.FullNm"].append(i[1].text)
+                data['FinInstrmGnlAttrbts.ClssfctnTp'].append(i[3].text)
+                data['FinInstrmGnlAttrbts.CmmdtyDerivInd'].append(i[4].text)
+                data['FinInstrmGnlAttrbts.NtnlCcy'].append(i[5].text)
+                data["Issr"].append(j.text)
+        
+            logger.info("Data Acquiring Completes.")
+    
+            #converting dict to dataframe
+            df=pd.DataFrame(data)
+            
+            #saving file in csv format
+            df.to_csv(dest,index=False)
+            
+            logger.info("csv file saved")
+            
+        except Exception as e:
+            logger.warning(e.__class__)
+
+#If this module runs as script
+if __name__== "__main__":
+    #calling xml_csv function to convert xml to csv
+    xml_csv("DLTINS_20210117_01of01.xml","Output")
