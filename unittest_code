@@ -1,0 +1,11 @@
+"""Desc: Unit testing for method xmlToCsv"""
+
+import unittest
+from xml_to_csv import xml_csv
+
+class TestXMLCSV(unittest.TestCase):
+    #Raises Error when parameters are not string 
+    def test_params_type(self): 
+        self.assertRaises(TypeError, xml_csv, 1, 1)
+    def test_params_type(self):
+        self.assertRaises(TypeError, xml_csv, True, True)
